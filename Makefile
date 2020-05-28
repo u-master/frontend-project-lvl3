@@ -12,7 +12,7 @@ relink:
 	npm link
 
 build:
-  npx webpack
+	npx webpack
 
 lint:
 	npx eslint .
