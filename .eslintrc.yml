@@ -14,3 +14,4 @@ parserOptions:
     impliedStrict: true
 rules:
   import/extensions: off
+  no-console: off
