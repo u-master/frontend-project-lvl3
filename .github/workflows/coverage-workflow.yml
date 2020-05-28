@@ -10,6 +10,7 @@ jobs:
       - name: Install npm packages
         run: |
           make install
+          make build
       - name: Start inner project linter
         run: |
           make lint
