@@ -12,22 +12,19 @@ const schema = yup.object().shape({
 });
 
 const main = () => {
-  console.log('Main function executed');
-
+  const form = document.querySelector('.add-channel-form');
   const elements = {
-    form: document.querySelector('.add-channel-form'),
-    urlInput: this.form.querySelector('#urlToChannel'),
-    urlFeedback: this.form.querySelector('.feedback'),
-    submit: this.form.querySelector('button[type="submit"]'),
+    form,
+    urlInput: form.querySelector('#urlToChannel'),
+    urlFeedback: form.querySelector('.feedback'),
+    submit: form.querySelector('button[type="submit"]'),
   };
 
-  console.log(elements);
-
   const state = {
+    process: 'filling',
     urlChannel: '',
     validChannel: true,
     feedbackChannel: '',
-    validForm: false,
   };
 
   // View
@@ -39,26 +36,41 @@ const main = () => {
     elements.urlFeedback.textContent = state.feedbackChannel;
     elements.urlInput.classList.add('is-invalid');
   });
-
-  watch(state, 'validForm', () => {
-    elements.submit.disabled = state.validForm;
+  watch(state, 'process', () => {
+    console.log(state.process);
+    if (state.process === 'sending') {
+      elements.urlInput.value = '';
+      elements.submit.disabled = true;
+      return;
+    }
+    elements.submit.disabled = false;
   });
 
   // Controller
-  const validate = () => {
-    schema.isValid({ urlChannel: elements.urlInput.value })
-      .then(() => {
-        state.urlChannel = elements.urlInput.value;
-        state.validChannel = true;
-        state.validForm = true;
-      })
-      .catch(() => {
-        state.validChannel = (elements.urlInput.value === '');
-        state.feedbackChannel = 'Wrong channel URL!';
-        state.validForm = false;
+  const validateChannel = () => schema
+    .validate({ urlChannel: elements.urlInput.value })
+    .then(() => {
+      state.urlChannel = elements.urlInput.value;
+      state.validChannel = true;
+      return true;
+    })
+    .catch(() => {
+      state.validChannel = false;
+      state.feedbackChannel = 'Wrong channel URL!';
+      return false;
+    });
+
+  elements.form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    validateChannel()
+      .then((result) => {
+        if (result === false) return;
+        state.process = 'sending';
+        setTimeout(() => {
+          state.process = 'filling';
+        }, 3000);
       });
-  };
-  elements.urlInput.addEventListener('input', validate);
+  });
   // addButtonElement.addEventListener('click');
 };
 
