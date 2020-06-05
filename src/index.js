@@ -12,66 +12,91 @@ const schema = yup.object().shape({
 });
 
 const main = () => {
-  const form = document.querySelector('.add-channel-form');
+  const formAdd = document.querySelector('.add-channel-form');
   const elements = {
-    form,
-    urlInput: form.querySelector('#urlToChannel'),
-    urlFeedback: form.querySelector('.feedback'),
-    submit: form.querySelector('button[type="submit"]'),
+    formAdd,
+    inputUrlAdd: formAdd.querySelector('#urlToChannel'),
+    feedbackAdd: formAdd.querySelector('.feedback'),
+    buttonAdd: formAdd.querySelector('button[type="submit"]'),
+    channelsList: document.querySelector('.channels-list'),
+    newsList: document.querySelector('.news-list'),
   };
 
   const state = {
     process: 'filling',
     urlChannel: '',
-    validChannel: true,
+    stateChannel: 'valid',
     feedbackChannel: '',
   };
 
+  const data = {
+    channels: [],
+    news: [],
+  };
+
   // View
-  watch(state, 'validChannel', () => {
-    if (state.validChannel) {
-      elements.urlInput.classList.remove('is-invalid');
+  watch(state, 'stateChannel', () => {
+    if (state.stateChannel === 'valid') {
+      elements.inputUrlAdd.classList.remove('is-invalid');
       return;
     }
-    elements.urlFeedback.textContent = state.feedbackChannel;
-    elements.urlInput.classList.add('is-invalid');
+    elements.feedbackAdd.textContent = state.feedbackChannel;
+    elements.inputUrlAdd.classList.add('is-invalid');
   });
   watch(state, 'process', () => {
-    console.log(state.process);
     if (state.process === 'sending') {
-      elements.urlInput.value = '';
-      elements.submit.disabled = true;
+      elements.inputUrlAdd.value = '';
+      elements.buttonAdd.disabled = true;
       return;
     }
-    elements.submit.disabled = false;
+    elements.buttonAdd.disabled = false;
+  });
+  watch(data, 'channels', () => {
+    const channelsItems = data.channels.map((channel) => {
+      const newItem = document.createElement('li');
+      newItem.innerHTML = `<a href="${channel}">${channel}</a>`;
+      return newItem;
+    });
+    elements.channelsList.innerHTML = '';
+    elements.channelsList.append(...channelsItems);
   });
 
   // Controller
   const validateChannel = () => schema
-    .validate({ urlChannel: elements.urlInput.value })
+    .validate({ urlChannel: elements.inputUrlAdd.value })
     .then(() => {
-      state.urlChannel = elements.urlInput.value;
-      state.validChannel = true;
+      const newUrl = elements.inputUrlAdd.value.trim();
+      if (data.channels.includes(newUrl)) {
+        state.urlChannel = '';
+        state.stateChannel = 'invalid-exist';
+        state.feedbackChannel = 'Already in track!';
+        return false;
+      }
+      state.urlChannel = newUrl;
+      state.feedbackChannel = '';
+      state.stateChannel = 'valid';
       return true;
     })
     .catch(() => {
-      state.validChannel = false;
+      state.urlChannel = '';
+      state.stateChannel = 'invalid-wrong';
       state.feedbackChannel = 'Wrong channel URL!';
       return false;
     });
 
-  elements.form.addEventListener('submit', (e) => {
+  elements.formAdd.addEventListener('submit', (e) => {
     e.preventDefault();
     validateChannel()
       .then((result) => {
         if (result === false) return;
         state.process = 'sending';
         setTimeout(() => {
+          data.channels.push(state.urlChannel);
+          state.urlChannel = '';
           state.process = 'filling';
         }, 3000);
       });
   });
-  // addButtonElement.addEventListener('click');
 };
 
 main();
