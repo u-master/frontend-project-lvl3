@@ -3,7 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 import * as yup from 'yup';
 import { watch } from 'melanke-watchjs';
-// import axios from 'axios';
+import axios from 'axios';
 
 console.log('RSS reader entry point');
 
@@ -60,6 +60,15 @@ const main = () => {
     elements.channelsList.innerHTML = '';
     elements.channelsList.append(...channelsItems);
   });
+  watch(data, 'news', () => {
+    const newsItems = data.news.map((news) => {
+      const newItem = document.createElement('li');
+      newItem.innerHTML = `<a href="${news.url}">${news.title}</a>`;
+      return newItem;
+    });
+    elements.newsList.innerHTML = '';
+    elements.newsList.append(...newsItems);
+  });
 
   // Controller
   const validateChannel = () => schema
@@ -84,17 +93,42 @@ const main = () => {
       return false;
     });
 
+  const parseNews = (rawData) => {
+    const parser = new DOMParser();
+    const parsedResponse = parser.parseFromString(rawData.data, 'application/xml');
+    const newsElements = [...parsedResponse.getElementsByTagName('item')];
+    return newsElements.map((newsElem) => ({
+      title: newsElem.querySelector('title').innerHTML,
+      url: newsElem.querySelector('link').innerHTML,
+    }));
+  };
+
+  const loadNews = () => data.channels
+    .map((channel) => axios
+      .get(channel)
+      .then(parseNews)
+      .catch(() => {
+        console.log(`Data cannot be fetched. URL: ${channel}`);
+        return [];
+      }));
+
   elements.formAdd.addEventListener('submit', (e) => {
     e.preventDefault();
     validateChannel()
       .then((result) => {
-        if (result === false) return;
+        if (result === false) throw new Error();
         state.process = 'sending';
-        setTimeout(() => {
-          data.channels.push(state.urlChannel);
-          state.urlChannel = '';
-          state.process = 'filling';
-        }, 3000);
+        data.channels.push(state.urlChannel);
+      })
+      .then(loadNews)
+      .then((news) => {
+        data.news.push(...news);
+        console.log(data.news);
+        state.urlChannel = '';
+        state.process = 'filling';
+      })
+      .catch(() => {
+        console.error('Cannot load a channel');
       });
   });
 };
