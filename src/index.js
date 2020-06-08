@@ -19,7 +19,7 @@ const main = () => {
     feedbackAdd: formAdd.querySelector('.feedback'),
     buttonAdd: formAdd.querySelector('button[type="submit"]'),
     channelsList: document.querySelector('.channels-list'),
-    newsList: document.querySelector('.news-list'),
+    postsList: document.querySelector('.posts-list'),
   };
 
   const state = {
@@ -31,7 +31,7 @@ const main = () => {
 
   const data = {
     channels: [],
-    news: [],
+    posts: [],
   };
 
   // View
@@ -60,14 +60,14 @@ const main = () => {
     elements.channelsList.innerHTML = '';
     elements.channelsList.append(...channelsItems);
   });
-  watch(data, 'news', () => {
-    const newsItems = data.news.map((news) => {
+  watch(data, 'posts', () => {
+    const postsItems = data.posts.map((post) => {
       const newItem = document.createElement('li');
-      newItem.innerHTML = `<a href="${news.url}">${news.title}</a>`;
+      newItem.innerHTML = `<a href="${post.url}">${post.title}</a>`;
       return newItem;
     });
-    elements.newsList.innerHTML = '';
-    elements.newsList.append(...newsItems);
+    elements.postsList.innerHTML = '';
+    elements.postsList.append(...postsItems);
   });
 
   // Controller
@@ -93,24 +93,16 @@ const main = () => {
       return false;
     });
 
-  const parseNews = (rawData) => {
+  const parsePosts = (rawData) => {
     const parser = new DOMParser();
-    const parsedResponse = parser.parseFromString(rawData.data, 'application/xml');
-    const newsElements = [...parsedResponse.getElementsByTagName('item')];
-    return newsElements.map((newsElem) => ({
-      title: newsElem.querySelector('title').innerHTML,
-      url: newsElem.querySelector('link').innerHTML,
+    const parsedResponse = parser.parseFromString(rawData.data, 'text/xml');
+    if (parsedResponse.querySelector('parsererror')) throw new Error('Wrong data format received');
+    const postsItems = [...parsedResponse.getElementsByTagName('item')];
+    return postsItems.map((newsElem) => ({
+      title: newsElem.querySelector('title').textContent,
+      url: newsElem.querySelector('link').textContent,
     }));
   };
-
-  const loadNews = () => data.channels
-    .map((channel) => axios
-      .get(channel)
-      .then(parseNews)
-      .catch(() => {
-        console.log(`Data cannot be fetched. URL: ${channel}`);
-        return [];
-      }));
 
   elements.formAdd.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -118,17 +110,28 @@ const main = () => {
       .then((result) => {
         if (result === false) throw new Error();
         state.process = 'sending';
-        data.channels.push(state.urlChannel);
+        return state.urlChannel;
       })
-      .then(loadNews)
-      .then((news) => {
-        data.news.push(...news);
-        console.log(data.news);
+      .then((urlChannel) => axios
+        .get(`https://cors-anywhere.herokuapp.com/${urlChannel}`)
+        .then(parsePosts)
+        .then((posts) => {
+          data.posts.push(...posts);
+        })
+        .catch((error) => {
+          console.error(`Data cannot be fetched. URL: ${urlChannel}. ${error}.`);
+          state.urlChannel = '';
+          state.process = 'filling';
+          state.feedbackChannel = error;
+          state.stateChannel = 'invalid-failure';
+          throw error;
+        }))
+      .then(() => {
+        data.channels.push(state.urlChannel);
         state.urlChannel = '';
         state.process = 'filling';
       })
       .catch(() => {
-        console.error('Cannot load a channel');
       });
   });
 };
