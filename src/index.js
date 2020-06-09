@@ -11,16 +11,17 @@ const schema = yup.object().shape({
   urlChannel: yup.string().url(),
 });
 
-const state = {
-  process: 'filling',
-  stateChannel: 'valid',
-  feedbackChannel: '',
-};
-
-const data = {
-  channels: [],
-  posts: [],
-};
+const { state, data } = initView(
+  {
+    process: 'filling',
+    stateChannel: 'valid',
+    feedbackChannel: '',
+  },
+  {
+    channels: [],
+    posts: [],
+  },
+);
 
 const formAddChannel = document.querySelector('.add-channel-form');
 const inputUrlAdd = formAddChannel.querySelector('#urlToChannel');
@@ -37,6 +38,7 @@ const checks = {
     : Promise.resolve(urlChannel)),
   fetchError: ({ message }) => {
     if (message.startsWith('rss-invalid-')) throw new Error(message);
+    console.error(message);
     throw new Error('rss-invalid-fetch');
   },
   parseError: ({ message }) => {
@@ -57,9 +59,7 @@ const fetchChannel = (urlChannel) => {
   return axios.get(`${urlProxy}${urlChannel}`);
 };
 
-// Entry point
-
-initView(state, data);
+// Controller
 
 formAddChannel.addEventListener('submit', (e) => {
   e.preventDefault();

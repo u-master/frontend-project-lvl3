@@ -36,7 +36,7 @@
     "axios": "^0.19.2",
     "bootstrap": "^4.5.0",
     "jquery": "^3.5.1",
-    "melanke-watchjs": "^1.5.2",
+    "on-change": "^2.0.1",
     "popper.js": "^1.16.1",
     "yup": "^0.29.1"
   }

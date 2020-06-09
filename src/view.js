@@ -1,5 +1,5 @@
 
-import { watch } from 'melanke-watchjs';
+import onChange from 'on-change';
 
 export default (state, data) => {
   const formAddChannel = document.querySelector('.add-channel-form');
@@ -11,40 +11,63 @@ export default (state, data) => {
     postsList: document.querySelector('.posts-list'),
   };
 
-  watch(state, 'stateChannel', () => {
-    if (state.stateChannel === 'valid') {
-      elements.inputUrlAdd.classList.remove('is-invalid');
-      return;
-    }
-    elements.feedbackAdd.textContent = state.feedbackChannel;
-    elements.inputUrlAdd.classList.add('is-invalid');
-  });
-  watch(state, 'process', () => {
-    if (state.process === 'fetching') {
-      elements.buttonAdd.disabled = true;
-      return;
-    }
-    if (state.process === 'fetched') {
-      elements.inputUrlAdd.value = '';
-    }
-    elements.buttonAdd.disabled = false;
-  });
-  watch(data, 'channels', () => {
-    const channelsItems = data.channels.map((channel) => {
+  const watchedState = onChange(state,
+    (path, value) => {
+      switch (path) {
+        case 'stateChannel':
+          if (value === 'valid') {
+            elements.inputUrlAdd.classList.remove('is-invalid');
+            break;
+          }
+          elements.feedbackAdd.textContent = state.feedbackChannel;
+          elements.inputUrlAdd.classList.add('is-invalid');
+          break;
+
+        case 'process':
+          if (value === 'fetching') {
+            elements.buttonAdd.disabled = true;
+            break;
+          }
+          if (value === 'fetched') {
+            elements.inputUrlAdd.value = '';
+          }
+          elements.buttonAdd.disabled = false;
+          break;
+
+        default:
+      }
+    });
+
+  const makeChannelsLIElems = () => data.channels
+    .map((channel) => {
       const newItem = document.createElement('li');
       newItem.innerHTML = `<a href="${channel}">${channel}</a>`;
       return newItem;
     });
-    elements.channelsList.innerHTML = '';
-    elements.channelsList.append(...channelsItems);
-  });
-  watch(data, 'posts', () => {
-    const postsItems = data.posts.map((post) => {
+
+  const makePostsLIElems = () => data.posts
+    .map(({ url, title }) => {
       const newItem = document.createElement('li');
-      newItem.innerHTML = `<a href="${post.url}">${post.title}</a>`;
+      newItem.innerHTML = `<a href="${url}">${title}</a>`;
       return newItem;
     });
-    elements.postsList.innerHTML = '';
-    elements.postsList.append(...postsItems);
-  });
+
+  const watchedData = onChange(data,
+    (path) => {
+      switch (path) {
+        case 'channels':
+          elements.channelsList.innerHTML = '';
+          elements.channelsList.append(...makeChannelsLIElems());
+          break;
+
+        case 'posts':
+          elements.postsList.innerHTML = '';
+          elements.postsList.append(...makePostsLIElems());
+          break;
+
+        default:
+      }
+    });
+
+  return { state: watchedState, data: watchedData };
 };
