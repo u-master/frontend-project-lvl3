@@ -35,6 +35,7 @@
   "dependencies": {
     "axios": "^0.19.2",
     "bootstrap": "^4.5.0",
+    "i18next": "^19.4.5",
     "jquery": "^3.5.1",
     "on-change": "^2.0.1",
     "popper.js": "^1.16.1",
