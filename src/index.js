@@ -3,9 +3,11 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 import * as yup from 'yup';
 import axios from 'axios';
+import i18next from 'i18next';
 
 import initView from './view.js';
 import parsePosts from './parse-rss.js';
+import resources from './locales';
 
 const schema = yup.object().shape({
   urlChannel: yup.string().url(),
@@ -47,12 +49,18 @@ const checks = {
   },
 };
 
-const feedbacks = {
+i18next.init({
+  lng: 'en',
+  debug: false,
+  resources,
+});
+
+/* const feedbacks = {
   'rss-invalid-wrong': 'Wrong channel URL!',
   'rss-invalid-exist': 'Already in track!',
   'rss-invalid-fetch': 'Data cannot be fetched!',
   'rss-invalid-parse': 'Wrong data format received',
-};
+}; */
 
 const fetchChannel = (urlChannel) => {
   const urlProxy = 'https://cors-anywhere.herokuapp.com/';
@@ -80,7 +88,7 @@ formAddChannel.addEventListener('submit', (e) => {
     })
     .catch((error) => {
       state.process = 'filling';
-      state.feedbackChannel = feedbacks[error.message];
+      state.feedbackChannel = i18next.t(`feedbacks.${error.message}`);
       state.stateChannel = error.message;
     });
 });
