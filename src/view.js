@@ -26,12 +26,14 @@ export default (state, data) => {
         case 'process':
           if (value === 'fetching') {
             elements.buttonAdd.disabled = true;
+            elements.inputUrlAdd.disabled = true;
             break;
           }
           if (value === 'fetched') {
             elements.inputUrlAdd.value = '';
           }
           elements.buttonAdd.disabled = false;
+          elements.inputUrlAdd.disabled = false;
           break;
 
         default:
