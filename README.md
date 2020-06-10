@@ -4,3 +4,5 @@
 # RSS Reader
 
 RSS aggregator. Collect news from selected RSS channels.
+
+[Sample Here on Vercel!](https://rss-reader.u-master.now.sh/)
