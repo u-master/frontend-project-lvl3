@@ -25,6 +25,12 @@ const { state, data } = initView(
   },
 );
 
+i18next.init({
+  lng: 'en',
+  debug: false,
+  resources,
+});
+
 const formAddChannel = document.querySelector('.add-channel-form');
 const inputUrlAdd = formAddChannel.querySelector('#urlToChannel');
 
@@ -49,12 +55,6 @@ const checks = {
   },
 };
 
-i18next.init({
-  lng: 'en',
-  debug: false,
-  resources,
-});
-
 const fetchChannel = (urlChannel) => {
   const urlProxy = 'https://cors-anywhere.herokuapp.com/';
   return axios.get(`${urlProxy}${urlChannel}`);
@@ -69,7 +69,7 @@ const updatePosts = () => {
       .then(parsePosts)
       .then((posts) => {
         const newPosts = posts.filter(({ title }) => (!oldTitles.includes(title)));
-        data.posts.push(...newPosts);
+        data.posts.unshift(...newPosts);
       }));
   Promise.all(updaters)
     .finally(() => setTimeout(updatePosts, timeoutUpdatePosts));
