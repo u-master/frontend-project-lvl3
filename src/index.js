@@ -55,16 +55,24 @@ i18next.init({
   resources,
 });
 
-/* const feedbacks = {
-  'rss-invalid-wrong': 'Wrong channel URL!',
-  'rss-invalid-exist': 'Already in track!',
-  'rss-invalid-fetch': 'Data cannot be fetched!',
-  'rss-invalid-parse': 'Wrong data format received',
-}; */
-
 const fetchChannel = (urlChannel) => {
   const urlProxy = 'https://cors-anywhere.herokuapp.com/';
   return axios.get(`${urlProxy}${urlChannel}`);
+};
+
+const timeoutUpdatePosts = 5000;
+
+const updatePosts = () => {
+  const oldTitles = data.posts.map(({ title }) => title);
+  const updaters = data.channels
+    .map((channel) => fetchChannel(channel)
+      .then(parsePosts)
+      .then((posts) => {
+        const newPosts = posts.filter(({ title }) => (!oldTitles.includes(title)));
+        data.posts.push(...newPosts);
+      }));
+  Promise.all(updaters)
+    .finally(() => setTimeout(updatePosts, timeoutUpdatePosts));
 };
 
 // Controller
@@ -92,3 +100,5 @@ formAddChannel.addEventListener('submit', (e) => {
       state.stateChannel = error.message;
     });
 });
+
+setTimeout(updatePosts, timeoutUpdatePosts);
