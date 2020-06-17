@@ -1,25 +1,44 @@
 
 import onChange from 'on-change';
 
-export default (state, data) => {
+export default (state) => {
   const formAddChannel = document.querySelector('.add-channel-form');
   const elements = {
     inputUrlAdd: formAddChannel.querySelector('#urlToChannel'),
-    feedbackAdd: formAddChannel.querySelector('.feedback'),
+    feedbackFailAdd: formAddChannel.querySelector('.feedback-fail'),
+    feedbackSuccessAdd: document.querySelector('.feedback-success'),
     buttonAdd: formAddChannel.querySelector('button[type="submit"]'),
     channelsList: document.querySelector('.channels-list'),
     postsList: document.querySelector('.posts-list'),
   };
 
+  const makeChannelsLIElems = () => state.data.channels
+    .map((channel) => {
+      const newItem = document.createElement('li');
+      newItem.innerHTML = `<a href="${channel}">${channel}</a>`;
+      return newItem;
+    });
+
+  const makePostsLIElems = () => state.data.posts
+    .map(({ url, title }) => {
+      const newItem = document.createElement('li');
+      newItem.innerHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a>`;
+      return newItem;
+    });
+
   const watchedState = onChange(state,
     (path, value) => {
+      console.log(`onChange: path=${path}; value=${value}`);
       switch (path) {
-        case 'stateChannel':
+        case 'state':
           if (value === 'valid') {
+            elements.feedbackSuccessAdd.textContent = state.feedback;
             elements.inputUrlAdd.classList.remove('is-invalid');
+            elements.feedbackSuccessAdd.classList.remove('d-none');
             break;
           }
-          elements.feedbackAdd.textContent = state.feedbackChannel;
+          elements.feedbackFailAdd.textContent = state.feedback;
+          elements.feedbackSuccessAdd.classList.add('d-none');
           elements.inputUrlAdd.classList.add('is-invalid');
           break;
 
@@ -36,33 +55,12 @@ export default (state, data) => {
           elements.inputUrlAdd.disabled = false;
           break;
 
-        default:
-      }
-    });
-
-  const makeChannelsLIElems = () => data.channels
-    .map((channel) => {
-      const newItem = document.createElement('li');
-      newItem.innerHTML = `<a href="${channel}">${channel}</a>`;
-      return newItem;
-    });
-
-  const makePostsLIElems = () => data.posts
-    .map(({ url, title }) => {
-      const newItem = document.createElement('li');
-      newItem.innerHTML = `<a href="${url}">${title}</a>`;
-      return newItem;
-    });
-
-  const watchedData = onChange(data,
-    (path) => {
-      switch (path) {
-        case 'channels':
+        case 'data.channels':
           elements.channelsList.innerHTML = '';
           elements.channelsList.append(...makeChannelsLIElems());
           break;
 
-        case 'posts':
+        case 'data.posts':
           elements.postsList.innerHTML = '';
           elements.postsList.append(...makePostsLIElems());
           break;
@@ -71,5 +69,5 @@ export default (state, data) => {
       }
     });
 
-  return { state: watchedState, data: watchedData };
+  return watchedState;
 };
