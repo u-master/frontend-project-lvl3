@@ -5,28 +5,28 @@ import i18next from 'i18next';
 
 import resources from './locales';
 
-const makeChannelsLIElems = (channels) => channels
+const makeChannels = (channels) => channels
   .map((channel) => {
     const newItem = document.createElement('li');
     newItem.innerHTML = `<a href="${channel}">${channel}</a>`;
     return newItem;
   });
 
-const makePostsLIElems = (posts) => posts
+const makePosts = (posts) => posts
   .map(({ url, title }) => {
     const newItem = document.createElement('li');
     newItem.innerHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a>`;
     return newItem;
   });
 
-const renderInvalid = (elements, state) => {
-  elements.feedbackFailAdd.textContent = i18next.t(`feedbacks.${state.validState}`);
+const renderInvalid = (elements, { validState }) => {
+  elements.feedbackFailAdd.textContent = i18next.t(`feedbacks.${validState}`);
   elements.feedbackSuccessAdd.classList.add('d-none');
   elements.inputUrlAdd.classList.add('is-invalid');
 };
 
-const renderValid = (elements, state) => {
-  elements.feedbackSuccessAdd.textContent = i18next.t(`feedbacks.${state.validState}`);
+const renderValid = (elements, { validState }) => {
+  elements.feedbackSuccessAdd.textContent = i18next.t(`feedbacks.${validState}`);
   elements.inputUrlAdd.classList.remove('is-invalid');
   elements.feedbackSuccessAdd.classList.remove('d-none');
 };
@@ -68,7 +68,7 @@ const renderers = [
   {
     check: (key) => (key === 'channels'),
     render: (elements, { channels }) => {
-      const channelsListItems = makeChannelsLIElems(channels);
+      const channelsListItems = makeChannels(channels);
       elements.channelsList.innerHTML = '';
       elements.channelsList.append(...channelsListItems);
     },
@@ -76,7 +76,7 @@ const renderers = [
   {
     check: (key) => (key === 'posts'),
     render: (elements, { posts }) => {
-      const postsListItems = makePostsLIElems(posts);
+      const postsListItems = makePosts(posts);
       elements.postsList.innerHTML = '';
       elements.postsList.append(...postsListItems);
     },
