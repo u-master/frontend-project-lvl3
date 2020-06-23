@@ -67,16 +67,18 @@ const renderers = [
   },
   {
     check: (key) => (key === 'channels'),
-    render: (elements, state) => {
+    render: (elements, { channels }) => {
+      const channelsListItems = makeChannelsLIElems(channels);
       elements.channelsList.innerHTML = '';
-      elements.channelsList.append(...makeChannelsLIElems(state.channels));
+      elements.channelsList.append(...channelsListItems);
     },
   },
   {
     check: (key) => (key === 'posts'),
-    render: (elements, state) => {
+    render: (elements, { posts }) => {
+      const postsListItems = makePostsLIElems(posts);
       elements.postsList.innerHTML = '';
-      elements.postsList.append(...makePostsLIElems(state.posts));
+      elements.postsList.append(...postsListItems);
     },
   },
 ];
