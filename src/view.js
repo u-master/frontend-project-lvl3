@@ -49,12 +49,10 @@ const renderers = {
     enableControls(elements);
   },
   channels: (elements, channels) => {
-    const channelsList = channels.map(buildChannelString).join('\n');
-    elements.channelsList.innerHTML = channelsList;
+    elements.channelsList.innerHTML = channels.map(buildChannelString);
   },
   posts: (elements, posts) => {
-    const postsList = posts.map(buildPostString).join('\n');
-    elements.postsList.innerHTML = postsList;
+    elements.postsList.innerHTML = posts.map(buildPostString);
   },
 };
 
