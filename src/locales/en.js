@@ -5,7 +5,8 @@ export default {
       'invalid-exist': 'Already in track!',
       'invalid-fetch': 'Data cannot be fetched!',
       'invalid-parse': 'Wrong data format received',
-      valid: 'Rss has been loaded',
+      'valid-ready': 'Fetching RSS data...',
+      'valid-loaded': 'Rss has been loaded',
     },
   },
 };
