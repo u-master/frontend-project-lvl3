@@ -5,29 +5,15 @@ import i18next from 'i18next';
 
 import resources from './locales';
 
-const makeChannelsElems = (channels) => channels
-  .map((channel) => {
-    const newItem = document.createElement('li');
-    newItem.innerHTML = `<a href="${channel}">${channel}</a>`;
-    return newItem;
-  });
-
-const makePostsElems = (posts) => posts
-  .map(({ url, title }) => {
-    const newItem = document.createElement('li');
-    newItem.innerHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a>`;
-    return newItem;
-  });
-
 const getFeedbackText = (state) => i18next.t(`feedbacks.${state}`);
 
-const renderInvalid = (elements, { validState }) => {
+const renderInvalid = (elements, validState) => {
   elements.feedbackFailAdd.textContent = getFeedbackText(validState);
   elements.feedbackSuccessAdd.classList.add('d-none');
   elements.inputUrlAdd.classList.add('is-invalid');
 };
 
-const renderValid = (elements, { validState }) => {
+const renderValid = (elements, validState) => {
   elements.feedbackSuccessAdd.textContent = getFeedbackText(validState);
   elements.inputUrlAdd.classList.remove('is-invalid');
   elements.feedbackSuccessAdd.classList.remove('d-none');
@@ -43,47 +29,34 @@ const disableControls = (elements) => {
   elements.inputUrlAdd.disabled = true;
 };
 
-const renderers = [
-  {
-    check: (key, value) => (key === 'validState' && value.startsWith('invalid')),
-    render: renderInvalid,
+const buildChannelString = (channel) => `<li><a href="${channel}">${channel}</a></li>`;
+
+const buildPostString = ({ url, title }) => `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></li>`;
+
+const renderers = {
+  validState: (elements, validState) => {
+    if (validState.startsWith('invalid')) renderInvalid(elements, validState);
+    else renderValid(elements, validState);
   },
-  {
-    check: (key, value) => (key === 'validState' && value.startsWith('valid')),
-    render: renderValid,
-  },
-  {
-    check: (key, value) => (key === 'process' && value === 'fetching'),
-    render: disableControls,
-  },
-  {
-    check: (key, value) => (key === 'process' && value === 'fetched'),
-    render: (elements) => {
+  process: (elements, process) => {
+    if (process === 'fetching') {
+      disableControls(elements);
+      return;
+    }
+    if (process === 'fetched') {
       elements.inputUrlAdd.value = '';
-      enableControls(elements);
-    },
+    }
+    enableControls(elements);
   },
-  {
-    check: (key, value) => (key === 'process' && value === 'filling'),
-    render: enableControls,
+  channels: (elements, channels) => {
+    const channelsList = channels.map(buildChannelString).join('\n');
+    elements.channelsList.innerHTML = channelsList;
   },
-  {
-    check: (key) => (key === 'channels'),
-    render: (elements, { channels }) => {
-      const channelsListItems = makeChannelsElems(channels);
-      elements.channelsList.innerHTML = '';
-      elements.channelsList.append(...channelsListItems);
-    },
+  posts: (elements, posts) => {
+    const postsList = posts.map(buildPostString).join('\n');
+    elements.postsList.innerHTML = postsList;
   },
-  {
-    check: (key) => (key === 'posts'),
-    render: (elements, { posts }) => {
-      const postsListItems = makePostsElems(posts);
-      elements.postsList.innerHTML = '';
-      elements.postsList.append(...postsListItems);
-    },
-  },
-];
+};
 
 export default (state) => {
   const formAddChannel = document.querySelector('.add-channel-form');
@@ -104,8 +77,8 @@ export default (state) => {
 
   const watchedState = onChange(state,
     (path, value) => {
-      const { render } = renderers.find(({ check }) => check(path, value)) || {};
-      if (render) render(elements, state);
+      const render = renderers[path];
+      if (render) render(elements, value);
     });
 
   return watchedState;
