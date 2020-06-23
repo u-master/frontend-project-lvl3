@@ -5,28 +5,30 @@ import i18next from 'i18next';
 
 import resources from './locales';
 
-const makeChannels = (channels) => channels
+const makeChannelsElems = (channels) => channels
   .map((channel) => {
     const newItem = document.createElement('li');
     newItem.innerHTML = `<a href="${channel}">${channel}</a>`;
     return newItem;
   });
 
-const makePosts = (posts) => posts
+const makePostsElems = (posts) => posts
   .map(({ url, title }) => {
     const newItem = document.createElement('li');
     newItem.innerHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a>`;
     return newItem;
   });
 
+const getFeedbackText = (state) => i18next.t(`feedbacks.${state}`);
+
 const renderInvalid = (elements, { validState }) => {
-  elements.feedbackFailAdd.textContent = i18next.t(`feedbacks.${validState}`);
+  elements.feedbackFailAdd.textContent = getFeedbackText(validState);
   elements.feedbackSuccessAdd.classList.add('d-none');
   elements.inputUrlAdd.classList.add('is-invalid');
 };
 
 const renderValid = (elements, { validState }) => {
-  elements.feedbackSuccessAdd.textContent = i18next.t(`feedbacks.${validState}`);
+  elements.feedbackSuccessAdd.textContent = getFeedbackText(validState);
   elements.inputUrlAdd.classList.remove('is-invalid');
   elements.feedbackSuccessAdd.classList.remove('d-none');
 };
@@ -68,7 +70,7 @@ const renderers = [
   {
     check: (key) => (key === 'channels'),
     render: (elements, { channels }) => {
-      const channelsListItems = makeChannels(channels);
+      const channelsListItems = makeChannelsElems(channels);
       elements.channelsList.innerHTML = '';
       elements.channelsList.append(...channelsListItems);
     },
@@ -76,7 +78,7 @@ const renderers = [
   {
     check: (key) => (key === 'posts'),
     render: (elements, { posts }) => {
-      const postsListItems = makePosts(posts);
+      const postsListItems = makePostsElems(posts);
       elements.postsList.innerHTML = '';
       elements.postsList.append(...postsListItems);
     },
