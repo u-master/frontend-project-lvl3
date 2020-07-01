@@ -3,8 +3,6 @@
 import onChange from 'on-change';
 import i18next from 'i18next';
 
-import resources from './locales';
-
 const getFeedbackText = (state) => i18next.t(`feedbacks.${state}`);
 
 const renderInvalid = (elements, validState) => {
@@ -29,9 +27,9 @@ const disableControls = (elements) => {
   elements.inputUrlAdd.disabled = true;
 };
 
-const buildChannelString = (channel) => `<li><a href="${channel}">${channel}</a></li>`;
+// const buildLinkString = (channel) => `<li><a href="${channel}">${channel}</a></li>`;
 
-const buildPostString = ({ url, title }) => `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></li>`;
+const buildLinkString = ({ url, title }) => `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></li>`;
 
 const renderers = {
   validState: (elements, validState) => {
@@ -49,10 +47,10 @@ const renderers = {
     enableControls(elements);
   },
   channels: (elements, channels) => {
-    elements.channelsList.innerHTML = channels.map(buildChannelString);
+    elements.channelsList.innerHTML = channels.map(buildLinkString).join('\n');
   },
   posts: (elements, posts) => {
-    elements.postsList.innerHTML = posts.map(buildPostString);
+    elements.postsList.innerHTML = posts.map(buildLinkString).join('\n');
   },
 };
 
@@ -66,12 +64,6 @@ export default (state) => {
     channelsList: document.querySelector('.channels-list'),
     postsList: document.querySelector('.posts-list'),
   };
-
-  i18next.init({
-    lng: 'en',
-    debug: false,
-    resources,
-  });
 
   const watchedState = onChange(state,
     (path, value) => {
