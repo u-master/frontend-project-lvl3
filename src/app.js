@@ -10,6 +10,7 @@ import resources from './locales';
 
 const getProxiedUrl = (url) => {
   // const urlProxy = 'https://cors-anywhere.herokuapp.com/';
+  // return `${urlProxy}${url}`;
   const urlProxy = 'https://api.allorigins.win/raw?url=';
   return `${urlProxy}${encodeURIComponent(url)}`;
 };
@@ -44,13 +45,13 @@ const validateUrl = (state, url, schema) => {
     schema.validateSync(url);
   } catch (err) {
     if (err.name === 'ValidationError') {
-      state.error = err.message;
-      state.stateForm = 'invalid';
+      state.error = { type: err.message };
+      state.formState = 'invalid';
       return false;
     }
     throw err;
   }
-  state.stateForm = 'valid';
+  state.formState = 'valid';
   return true;
 };
 
@@ -58,20 +59,19 @@ const addChannel = (state, urlRss) => {
   state.process = 'fetching';
   fetchChannel(urlRss)
     .then((rawRss) => {
-      let rssData;
-      try {
-        rssData = parsePosts(rawRss);
-      } catch (error) {
-        state.error = i18next.t('invalid-parse');
-        state.process = 'fetch-failed';
-        return;
-      }
+      const rssData = parsePosts(rawRss);
       state.channels.push({ title: rssData.title, url: rssData.url, urlRss });
       state.posts.unshift(...rssData.posts);
       state.process = 'fetched';
+      state.formState = 'empty';
     })
     .catch((error) => {
-      state.error = `${i18next.t('invalid-fetch')}: ${error.message}`;
+      if (!error.isAxiosError && !error.isParseRssError) throw error;
+      if (error.isAxiosError) {
+        state.error = { type: 'cannotFetch', data: { statusCode: error.response.status, statusText: error.response.statusText } };
+      } else {
+        state.error = { type: 'cannotParse' };
+      }
       state.process = 'fetch-failed';
     });
 };
@@ -87,9 +87,9 @@ const app = () => {
 
   const state = initView(
     {
-      process: 'filling',
-      validForm: 'valid',
-      error: null,
+      process: 'ready',
+      formState: 'empty',
+      error: null, // { type: 'error-type', data: { extraField1: 'data1', extraField2: 'data2' } }
       channels: [],
       posts: [],
     },
@@ -98,8 +98,8 @@ const app = () => {
   const schemaUrl = yup
     .string()
     .required()
-    .url(() => i18next.t('invalid-wrong'))
-    .test('notExist', () => i18next.t('invalid-exist'), (value) => !state.channels.map(({ urlRss }) => urlRss).includes(value));
+    .url('wrongURL')
+    .test('notExist', 'alreadyExist', (value) => !state.channels.map(({ urlRss }) => urlRss).includes(value));
 
   formAddChannel.addEventListener('submit', (e) => {
     e.preventDefault();

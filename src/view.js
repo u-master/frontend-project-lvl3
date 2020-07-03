@@ -3,19 +3,33 @@
 import onChange from 'on-change';
 import i18next from 'i18next';
 
-const getFeedbackText = (state) => i18next.t(`feedbacks.${state}`);
+/* const getFeedbackText =
+(feedbackType, textType, extraData) => i18next.t(`${feedbackType}.${textType}`, extraData);
 
-const renderInvalid = (elements, validState) => {
-  elements.feedbackFailAdd.textContent = getFeedbackText(validState);
+const renderInvalid = (elements, { type, data }) => {
+  elements.feedbackFailAdd.textContent = getFeedbackText('error', type, data);
   elements.feedbackSuccessAdd.classList.add('d-none');
   elements.inputUrlAdd.classList.add('is-invalid');
 };
 
-const renderValid = (elements, validState) => {
-  elements.feedbackSuccessAdd.textContent = getFeedbackText(validState);
+const renderValid = (elements, { type, data }) => {
+  elements.feedbackSuccessAdd.textContent = getFeedbackText('success', type, data);
   elements.inputUrlAdd.classList.remove('is-invalid');
   elements.feedbackSuccessAdd.classList.remove('d-none');
+}; */
+
+const resetFeedback = (elements) => {
+  elements.feedbackSuccessAdd.textContent = '';
+  elements.inputUrlAdd.classList.remove('is-invalid');
+  elements.feedbackSuccessAdd.classList.add('d-none');
 };
+
+const applyFeedback = (elements, feedbackType, { type, data }) => {
+  elements.feedbackFailAdd.textContent = i18next.t(`${feedbackType}.${type}`, data);
+  if (feedbackType === 'success') elements.feedbackSuccessAdd.classList.remove('d-none');
+  if (feedbackType === 'error') elements.inputUrlAdd.classList.add('is-invalid');
+};
+
 
 const enableControls = (elements) => {
   elements.buttonAdd.disabled = false;
@@ -27,23 +41,22 @@ const disableControls = (elements) => {
   elements.inputUrlAdd.disabled = true;
 };
 
-// const buildLinkString = (channel) => `<li><a href="${channel}">${channel}</a></li>`;
-
 const buildLinkString = ({ url, title }) => `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></li>`;
 
 const renderers = {
-  validState: (elements, validState) => {
-    if (validState.startsWith('invalid')) renderInvalid(elements, validState);
-    else renderValid(elements, validState);
+  formState: (elements, formState, state) => {
+    resetFeedback(elements);
+    if (formState === 'invalid') applyFeedback(elements, 'error', state.error);
+    if (formState === 'empty') elements.inputUrlAdd.value = '';
   },
-  process: (elements, process) => {
+  process: (elements, process, state) => {
     if (process === 'fetching') {
       disableControls(elements);
       return;
     }
-    if (process === 'fetched') {
-      elements.inputUrlAdd.value = '';
-    }
+    resetFeedback(elements);
+    if (process === 'fetched') applyFeedback(elements, 'success', { type: 'loaded' });
+    if (process === 'fetch-failed') applyFeedback(elements, 'error', state.error);
     enableControls(elements);
   },
   channels: (elements, channels) => {
@@ -66,9 +79,9 @@ export default (state) => {
   };
 
   const watchedState = onChange(state,
-    (path, value) => {
+    function _handle(path, value) {
       const render = renderers[path];
-      if (render) render(elements, value);
+      if (render) render(elements, value, this);
     });
 
   return watchedState;
