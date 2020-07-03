@@ -44,14 +44,13 @@ const validateUrl = (state, url, schema) => {
     schema.validateSync(url);
   } catch (err) {
     if (err.name === 'ValidationError') {
-      state.validState = (err.type === 'isNotExist') ? 'invalid-exist' : 'invalid-wrong';
-      state.process = 'filling';
+      state.error = err.message;
+      state.stateForm = 'invalid';
       return false;
     }
     throw err;
   }
-  state.validState = 'valid-ready';
-  state.process = 'filled';
+  state.stateForm = 'valid';
   return true;
 };
 
@@ -63,19 +62,17 @@ const addChannel = (state, urlRss) => {
       try {
         rssData = parsePosts(rawRss);
       } catch (error) {
-        state.validState = 'invalid-parse';
-        state.process = 'filling';
+        state.error = i18next.t('invalid-parse');
+        state.process = 'fetch-failed';
         return;
       }
       state.channels.push({ title: rssData.title, url: rssData.url, urlRss });
       state.posts.unshift(...rssData.posts);
-      state.validState = 'valid-loaded';
       state.process = 'fetched';
     })
-    .catch(({ message }) => {
-      state.validState = 'invalid-fetch';
-      state.process = 'filling';
-      console.error(message);
+    .catch((error) => {
+      state.error = `${i18next.t('invalid-fetch')}: ${error.message}`;
+      state.process = 'fetch-failed';
     });
 };
 
@@ -91,9 +88,8 @@ const app = () => {
   const state = initView(
     {
       process: 'filling',
-      validState: 'valid-initial',
+      validForm: 'valid',
       error: null,
-      feedback: '',
       channels: [],
       posts: [],
     },
@@ -103,7 +99,7 @@ const app = () => {
     .string()
     .required()
     .url(() => i18next.t('invalid-wrong'))
-    .test('isNotExist', () => i18next.t('invalid-exist'), (value) => !state.channels.map(({ urlRss }) => urlRss).includes(value));
+    .test('notExist', () => i18next.t('invalid-exist'), (value) => !state.channels.map(({ urlRss }) => urlRss).includes(value));
 
   formAddChannel.addEventListener('submit', (e) => {
     e.preventDefault();
