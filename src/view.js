@@ -16,7 +16,7 @@ const renderValid = (elements, { type, data }) => {
   elements.feedbackSuccessAdd.textContent = getFeedbackText('success', type, data);
   elements.inputUrlAdd.classList.remove('is-invalid');
   elements.feedbackSuccessAdd.classList.remove('d-none');
-}; */
+};
 
 const resetFeedback = (elements) => {
   elements.feedbackSuccessAdd.textContent = '';
@@ -25,11 +25,28 @@ const resetFeedback = (elements) => {
 };
 
 const applyFeedback = (elements, feedbackType, { type, data }) => {
-  elements.feedbackFailAdd.textContent = i18next.t(`${feedbackType}.${type}`, data);
-  if (feedbackType === 'success') elements.feedbackSuccessAdd.classList.remove('d-none');
-  if (feedbackType === 'error') elements.inputUrlAdd.classList.add('is-invalid');
+  if (feedbackType === 'success') {
+    elements.feedbackAdd.classList.remove('invalid-feedback');
+    elements.feedbackAdd.classList.add('valid-feedback');
+  }
+  if (feedbackType === 'error') {
+    elements.feedbackAdd.classList.remove('valid-feedback');
+    elements.feedbackAdd.classList.add('invalid-feedback');
+  }
+}; */
+
+
+const setErrorFeedback = (elements, { type, data }) => {
+  elements.feedbackErrorAdd.textContent = i18next.t(`error.${type}`, data);
+  elements.inputUrlAdd.classList.add('is-invalid');
+  elements.feedbackSuccessAdd.classList.add('d-none');
 };
 
+const setSuccessFeedback = (elements, { type, data }) => {
+  elements.feedbackSuccessAdd.textContent = i18next.t(`success.${type}`, data);
+  elements.inputUrlAdd.classList.remove('is-invalid');
+  elements.feedbackSuccessAdd.classList.remove('d-none');
+};
 
 const enableControls = (elements) => {
   elements.buttonAdd.disabled = false;
@@ -45,8 +62,7 @@ const buildLinkString = ({ url, title }) => `<li><a href="${url}" target="_blank
 
 const renderers = {
   formState: (elements, formState, state) => {
-    resetFeedback(elements);
-    if (formState === 'invalid') applyFeedback(elements, 'error', state.error);
+    if (formState === 'invalid') setErrorFeedback(elements, state.error);
     if (formState === 'empty') elements.inputUrlAdd.value = '';
   },
   process: (elements, process, state) => {
@@ -54,9 +70,8 @@ const renderers = {
       disableControls(elements);
       return;
     }
-    resetFeedback(elements);
-    if (process === 'fetched') applyFeedback(elements, 'success', { type: 'loaded' });
-    if (process === 'fetch-failed') applyFeedback(elements, 'error', state.error);
+    if (process === 'fetched') setSuccessFeedback(elements, { type: 'loaded' });
+    if (process === 'fetch-failed') setErrorFeedback(elements, state.error);
     enableControls(elements);
   },
   channels: (elements, channels) => {
@@ -71,7 +86,7 @@ export default (state) => {
   const formAddChannel = document.querySelector('.add-channel-form');
   const elements = {
     inputUrlAdd: formAddChannel.querySelector('#urlToChannel'),
-    feedbackFailAdd: formAddChannel.querySelector('.feedback-fail'),
+    feedbackErrorAdd: formAddChannel.querySelector('.feedback-error'),
     feedbackSuccessAdd: document.querySelector('.feedback-success'),
     buttonAdd: formAddChannel.querySelector('button[type="submit"]'),
     channelsList: document.querySelector('.channels-list'),
