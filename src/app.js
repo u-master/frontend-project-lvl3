@@ -79,7 +79,7 @@ const addChannel = (state, urlRss) => {
     });
 };
 
-const app = () => {
+const run = () => {
   const formAddChannel = document.querySelector('.add-channel-form');
 
   i18next.init({
@@ -122,4 +122,4 @@ const app = () => {
   setTimeout(updatePosts, intervalPostsUpdate, state);
 };
 
-export default app;
+export default run;
