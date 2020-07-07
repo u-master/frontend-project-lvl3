@@ -36,14 +36,14 @@ const applyFeedback = (elements, feedbackType, { type, data }) => {
 }; */
 
 
-const setErrorFeedback = (elements, { type, data }) => {
-  elements.feedbackErrorAdd.textContent = i18next.t(`error.${type}`, data);
+const setErrorFeedback = (elements, errorType, errorData) => {
+  elements.feedbackErrorAdd.textContent = i18next.t(`error.${errorType}`, errorData);
   elements.inputUrlAdd.classList.add('is-invalid');
   elements.feedbackSuccessAdd.classList.add('d-none');
 };
 
-const setSuccessFeedback = (elements, { type, data }) => {
-  elements.feedbackSuccessAdd.textContent = i18next.t(`success.${type}`, data);
+const setSuccessFeedback = (elements, successType) => {
+  elements.feedbackSuccessAdd.textContent = i18next.t(`success.${successType}`);
   elements.inputUrlAdd.classList.remove('is-invalid');
   elements.feedbackSuccessAdd.classList.remove('d-none');
 };
@@ -61,17 +61,17 @@ const disableControls = (elements) => {
 const buildLinkString = ({ url, title }) => `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></li>`;
 
 const renderers = {
-  formState: (elements, formState, state) => {
-    if (formState === 'invalid') setErrorFeedback(elements, state.error);
-    if (formState === 'empty') elements.inputUrlAdd.value = '';
+  formState: (elements, { name, error }) => {
+    if (name === 'invalid') setErrorFeedback(elements, error);
+    if (name === 'empty') elements.inputUrlAdd.value = '';
   },
-  process: (elements, process, state) => {
-    if (process === 'fetching') {
+  process: (elements, { name, error, errorData }) => {
+    if (name === 'fetching') {
       disableControls(elements);
       return;
     }
-    if (process === 'fetched') setSuccessFeedback(elements, { type: 'loaded' });
-    if (process === 'fetch-failed') setErrorFeedback(elements, state.error);
+    if (name === 'fetched') setSuccessFeedback(elements, 'loaded');
+    if (name === 'fetch-failed') setErrorFeedback(elements, error, errorData);
     enableControls(elements);
   },
   channels: (elements, channels) => {
@@ -94,9 +94,9 @@ export default (state) => {
   };
 
   const watchedState = onChange(state,
-    function _handle(path, value) {
+    (path, value) => {
       const render = renderers[path];
-      if (render) render(elements, value, this);
+      if (render) render(elements, value);
     });
 
   return watchedState;

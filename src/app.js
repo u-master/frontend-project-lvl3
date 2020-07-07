@@ -8,19 +8,25 @@ import initView from './view.js';
 import parsePosts from './parse-rss.js';
 import resources from './locales';
 
+
+const intervalPostsUpdate = 5000;
+
+const intervalFetchTimeout = 5000;
+
 const getProxiedUrl = (url) => {
-  // const urlProxy = 'https://cors-anywhere.herokuapp.com/';
-  // return `${urlProxy}${url}`;
-  const urlProxy = 'https://api.allorigins.win/raw?url=';
-  return `${urlProxy}${encodeURIComponent(url)}`;
+  const urlProxy = 'https://cors-anywhere.herokuapp.com/';
+  return `${urlProxy}${url}`;
+  // const urlProxy = 'https://api.allorigins.win/raw?url=';
+  // return `${urlProxy}${encodeURIComponent(url)}`;
+  // return url;
 };
 
 const fetchChannel = (urlChannel) => {
   const proxiedUrl = getProxiedUrl(urlChannel);
-  return axios.get(proxiedUrl);
+  return axios.get(proxiedUrl, { timeout: intervalFetchTimeout });
 };
 
-const updatePosts = (state, intervalPostsUpdate) => {
+const updatePosts = (state) => {
   const oldTitles = state.posts.map(({ title }) => title);
   const updaters = state.channels
     .map(({ urlRss }) => fetchChannel(urlRss)
@@ -35,7 +41,7 @@ const updatePosts = (state, intervalPostsUpdate) => {
         state.posts.unshift(...newPosts);
       }));
   Promise.all(updaters)
-    .finally(() => setTimeout(updatePosts, intervalPostsUpdate, state, intervalPostsUpdate));
+    .finally(() => setTimeout(updatePosts, intervalPostsUpdate, state));
 };
 
 // Controller
@@ -45,34 +51,32 @@ const validateUrl = (state, url, schema) => {
     schema.validateSync(url);
   } catch (err) {
     if (err.name === 'ValidationError') {
-      state.error = { type: err.message };
-      state.formState = 'invalid';
+      state.formState = { name: 'invalid', error: err.message };
       return false;
     }
     throw err;
   }
-  state.formState = 'valid';
+  state.formState = { name: 'valid' };
   return true;
 };
 
 const addChannel = (state, urlRss) => {
-  state.process = 'fetching';
+  state.process = { name: 'fetching' };
   fetchChannel(urlRss)
     .then((rawRss) => {
       const rssData = parsePosts(rawRss);
       state.channels.push({ title: rssData.title, url: rssData.url, urlRss });
       state.posts.unshift(...rssData.posts);
-      state.process = 'fetched';
-      state.formState = 'empty';
+      state.process = { name: 'fetched' };
+      state.formState = { name: 'empty' };
     })
     .catch((error) => {
       if (!error.isAxiosError && !error.isParseRssError) throw error;
       if (error.isAxiosError) {
-        state.error = { type: 'cannotFetch', data: { statusCode: error.response.status, statusText: error.response.statusText } };
+        state.process = { name: 'fetch-failed', error: 'cannotFetch', errorData: { statusText: error.message } };
       } else {
-        state.error = { type: 'cannotParse' };
+        state.process = { name: 'fetch-failed', error: 'cannotParse' };
       }
-      state.process = 'fetch-failed';
     });
 };
 
@@ -87,9 +91,14 @@ const app = () => {
 
   const state = initView(
     {
-      process: 'ready',
-      formState: 'empty',
-      error: null, // { type: 'error-type', data: { extraField1: 'data1', extraField2: 'data2' } }
+      process: {
+        name: 'ready',
+        error: null,
+      },
+      formState: {
+        name: 'empty',
+        error: null,
+      },
       channels: [],
       posts: [],
     },
@@ -110,9 +119,7 @@ const app = () => {
     }
   });
 
-  const intervalPostsUpdate = 5000;
-
-  setTimeout(updatePosts, intervalPostsUpdate, state, intervalPostsUpdate);
+  setTimeout(updatePosts, intervalPostsUpdate, state);
 };
 
 export default app;
