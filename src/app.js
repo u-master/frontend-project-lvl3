@@ -3,8 +3,9 @@
 import * as yup from 'yup';
 import axios from 'axios';
 import i18next from 'i18next';
+import onChange from 'on-change';
 
-import initView from './view.js';
+import renderView from './view.js';
 import parsePosts from './parse-rss.js';
 import resources from './locales';
 
@@ -89,7 +90,7 @@ const app = () => {
     resources,
   });
 
-  const state = initView(
+  const state = onChange(
     {
       process: {
         name: 'ready',
@@ -102,6 +103,7 @@ const app = () => {
       channels: [],
       posts: [],
     },
+    renderView,
   );
 
   const schemaUrl = yup
