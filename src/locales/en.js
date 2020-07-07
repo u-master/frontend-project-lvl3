@@ -3,7 +3,7 @@ export default {
     error: {
       wrongURL: 'Wrong channel URL!',
       alreadyExist: 'Already in track!',
-      cannotFetch: 'Data cannot be fetched. Reason: {{statusText}}',
+      cannotFetch: 'Data cannot be fetched. Reason: {{errorDetails}}',
       cannotParse: 'Wrong data format received',
     },
     success: {
