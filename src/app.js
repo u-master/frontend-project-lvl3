@@ -32,14 +32,12 @@ const updatePosts = (state) => {
   const updaters = state.channels
     .map(({ urlRss }) => fetchChannel(urlRss)
       .then((rawRss) => {
-        let posts;
-        try {
-          posts = parsePosts(rawRss).posts;
-        } catch (error) {
-          return;
-        }
+        const { posts } = parsePosts(rawRss);
         const newPosts = posts.filter(({ title }) => (!oldTitles.includes(title)));
         state.posts.unshift(...newPosts);
+      })
+      .catch((error) => {
+        if (!error.isAxiosError && !error.isParseRssError) throw error;
       }));
   Promise.all(updaters)
     .finally(() => setTimeout(updatePosts, intervalPostsUpdate, state));
@@ -74,7 +72,7 @@ const addChannel = (state, urlRss) => {
     .catch((error) => {
       if (!error.isAxiosError && !error.isParseRssError) throw error;
       if (error.isAxiosError) {
-        state.process = { name: 'fetch-failed', error: 'cannotFetch', errorData: { statusText: error.message } };
+        state.process = { name: 'fetch-failed', error: 'cannotFetch', errorData: { errorDetails: error.message } };
       } else {
         state.process = { name: 'fetch-failed', error: 'cannotParse' };
       }
