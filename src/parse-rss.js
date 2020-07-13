@@ -1,4 +1,6 @@
 
+const getValue = (element, valueName) => element.querySelector(valueName).textContent;
+
 export default (rawData) => {
   const parser = new DOMParser();
   const parsedResponse = parser.parseFromString(rawData.data, 'text/xml');
@@ -7,16 +9,16 @@ export default (rawData) => {
     e.isParseRssError = true;
     throw e;
   }
-  const title = parsedResponse.querySelector('title').textContent;
-  const url = parsedResponse.querySelector('link').textContent;
-  const description = parsedResponse.querySelector('description').textContent;
-  const pubDate = parsedResponse.querySelector('pubDate').textContent;
+  const title = getValue(parsedResponse, 'title');
+  const url = getValue(parsedResponse, 'link');
+  const description = getValue(parsedResponse, 'description');
+  const pubDate = getValue(parsedResponse, 'pubDate');
   const postElements = [...parsedResponse.getElementsByTagName('item')];
   const posts = postElements.map((postElement) => ({
-    title: postElement.querySelector('title').textContent,
-    url: postElement.querySelector('link').textContent,
-    description: postElement.querySelector('description').textContent,
-    pubDate: postElement.querySelector('pubDate').textContent,
+    title: getValue(postElement, 'title'),
+    url: getValue(postElement, 'link'),
+    description: getValue(postElement, 'description'),
+    pubDate: getValue(postElement, 'pubDate'),
   }));
   return {
     title,
