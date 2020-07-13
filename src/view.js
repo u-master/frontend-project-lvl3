@@ -26,19 +26,32 @@ const disableControls = (elements) => {
 
 const buildLinkString = ({ url, title }) => `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></li>`;
 
+const formStateRenderers = {
+  invalid: (elements, error) => setErrorFeedback(elements, error),
+  empty: (elements) => {
+    elements.inputUrlAdd.value = '';
+  },
+  valid: () => {},
+};
+
+const loadingStateRenderers = {
+  fetching: (elements) => disableControls(elements),
+  fetched: (elements) => {
+    setSuccessFeedback(elements, 'loaded');
+    enableControls(elements);
+  },
+  'fetch-failed': (elements, error, errorData) => {
+    setErrorFeedback(elements, error, errorData);
+    enableControls(elements);
+  },
+};
+
 const renderers = {
   form: (elements, { state, error }) => {
-    if (state === 'invalid') setErrorFeedback(elements, error);
-    if (state === 'empty') elements.inputUrlAdd.value = '';
+    formStateRenderers[state](elements, error);
   },
   loadingProcess: (elements, { state, error, errorData }) => {
-    if (state === 'fetching') {
-      disableControls(elements);
-      return;
-    }
-    if (state === 'fetched') setSuccessFeedback(elements, 'loaded');
-    if (state === 'fetch-failed') setErrorFeedback(elements, error, errorData);
-    enableControls(elements);
+    loadingStateRenderers[state](elements, error, errorData);
   },
   channels: (elements, channels) => {
     elements.channelsList.innerHTML = channels.map(buildLinkString).join('\n');
@@ -48,17 +61,7 @@ const renderers = {
   },
 };
 
-export default (changed, value) => {
-  const formAddChannel = document.querySelector('.add-channel-form');
-  const elements = {
-    inputUrlAdd: formAddChannel.querySelector('#urlToChannel'),
-    feedbackErrorAdd: formAddChannel.querySelector('.feedback-error'),
-    feedbackSuccessAdd: document.querySelector('.feedback-success'),
-    buttonAdd: formAddChannel.querySelector('button[type="submit"]'),
-    channelsList: document.querySelector('.channels-list'),
-    postsList: document.querySelector('.posts-list'),
-  };
-
+export default (elements, changed, value) => {
   const render = renderers[changed];
-  if (render) render(elements, value);
+  render(elements, value);
 };

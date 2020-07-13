@@ -5,7 +5,7 @@ import axios from 'axios';
 import i18next from 'i18next';
 import onChange from 'on-change';
 
-import renderView from './view.js';
+import watcher from './view.js';
 import parsePosts from './parse-rss.js';
 import resources from './locales';
 
@@ -45,7 +45,16 @@ const updatePosts = (state) => {
 
 // Controller
 
-const validateUrl = (state, url, schema) => {
+const validateUrl = (state, url) => {
+  const channelsUrls = state.channels.map(({ urlRss }) => urlRss);
+  const schema = yup
+    .string()
+    .required()
+    .url('wrongURL')
+    .notOneOf(channelsUrls, 'alreadyExist');
+    // .test('notExist', 'alreadyExist',
+    // (value) => !state.channels.find(({ urlRss }) => urlRss === value));
+
   try {
     schema.validateSync(url);
   } catch (err) {
@@ -70,17 +79,28 @@ const addChannel = (state, urlRss) => {
       state.form = { state: 'empty' };
     })
     .catch((error) => {
-      if (!error.isAxiosError && !error.isParseRssError) throw error;
       if (error.isAxiosError) {
         state.loadingProcess = { state: 'fetch-failed', error: 'cannotFetch', errorData: { errorDetails: error.message } };
-      } else {
-        state.loadingProcess = { state: 'fetch-failed', error: 'cannotParse' };
+        return;
       }
+      if (error.isParseRssError) {
+        state.loadingProcess = { state: 'fetch-failed', error: 'cannotParse' };
+        return;
+      }
+      throw error;
     });
 };
 
 const run = () => {
   const formAddChannel = document.querySelector('.add-channel-form');
+  const elements = {
+    inputUrlAdd: formAddChannel.querySelector('#urlToChannel'),
+    feedbackErrorAdd: formAddChannel.querySelector('.feedback-error'),
+    feedbackSuccessAdd: document.querySelector('.feedback-success'),
+    buttonAdd: formAddChannel.querySelector('button[type="submit"]'),
+    channelsList: document.querySelector('.channels-list'),
+    postsList: document.querySelector('.posts-list'),
+  };
 
   i18next.init({
     lng: 'en',
@@ -101,20 +121,14 @@ const run = () => {
       channels: [],
       posts: [],
     },
-    renderView,
+    (changed, value) => watcher(elements, changed, value),
   );
-
-  const schemaUrl = yup
-    .string()
-    .required()
-    .url('wrongURL')
-    .test('notExist', 'alreadyExist', (value) => !state.channels.map(({ urlRss }) => urlRss).includes(value));
 
   formAddChannel.addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const url = formData.get('urlToChannel').trim();
-    if (validateUrl(state, url, schemaUrl)) {
+    if (validateUrl(state, url)) {
       addChannel(state, url);
     }
   });
