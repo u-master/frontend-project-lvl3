@@ -19,7 +19,7 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       title: 'RSS Reader',
-      template: './src/index.html',
+      template: './src/static/index.html',
     }),
   ],
 };
