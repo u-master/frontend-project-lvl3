@@ -27,17 +27,17 @@ const disableControls = (elements) => {
 const buildLinkString = ({ url, title }) => `<li><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></li>`;
 
 const renderers = {
-  formState: (elements, { name, error }) => {
-    if (name === 'invalid') setErrorFeedback(elements, error);
-    if (name === 'empty') elements.inputUrlAdd.value = '';
+  form: (elements, { state, error }) => {
+    if (state === 'invalid') setErrorFeedback(elements, error);
+    if (state === 'empty') elements.inputUrlAdd.value = '';
   },
-  process: (elements, { name, error, errorData }) => {
-    if (name === 'fetching') {
+  loadingProcess: (elements, { state, error, errorData }) => {
+    if (state === 'fetching') {
       disableControls(elements);
       return;
     }
-    if (name === 'fetched') setSuccessFeedback(elements, 'loaded');
-    if (name === 'fetch-failed') setErrorFeedback(elements, error, errorData);
+    if (state === 'fetched') setSuccessFeedback(elements, 'loaded');
+    if (state === 'fetch-failed') setErrorFeedback(elements, error, errorData);
     enableControls(elements);
   },
   channels: (elements, channels) => {

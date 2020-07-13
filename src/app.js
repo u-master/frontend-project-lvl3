@@ -50,31 +50,31 @@ const validateUrl = (state, url, schema) => {
     schema.validateSync(url);
   } catch (err) {
     if (err.name === 'ValidationError') {
-      state.formState = { name: 'invalid', error: err.message };
+      state.form = { state: 'invalid', error: err.message };
       return false;
     }
     throw err;
   }
-  state.formState = { name: 'valid' };
+  state.form = { state: 'valid' };
   return true;
 };
 
 const addChannel = (state, urlRss) => {
-  state.process = { name: 'fetching' };
+  state.loadingProcess = { state: 'fetching' };
   fetchChannel(urlRss)
     .then((rawRss) => {
       const rssData = parsePosts(rawRss);
       state.channels.push({ title: rssData.title, url: rssData.url, urlRss });
       state.posts.unshift(...rssData.posts);
-      state.process = { name: 'fetched' };
-      state.formState = { name: 'empty' };
+      state.loadingProcess = { state: 'fetched' };
+      state.form = { state: 'empty' };
     })
     .catch((error) => {
       if (!error.isAxiosError && !error.isParseRssError) throw error;
       if (error.isAxiosError) {
-        state.process = { name: 'fetch-failed', error: 'cannotFetch', errorData: { errorDetails: error.message } };
+        state.loadingProcess = { state: 'fetch-failed', error: 'cannotFetch', errorData: { errorDetails: error.message } };
       } else {
-        state.process = { name: 'fetch-failed', error: 'cannotParse' };
+        state.loadingProcess = { state: 'fetch-failed', error: 'cannotParse' };
       }
     });
 };
@@ -90,12 +90,12 @@ const run = () => {
 
   const state = onChange(
     {
-      process: {
-        name: 'ready',
+      loadingProcess: {
+        state: 'ready',
         error: null,
       },
-      formState: {
-        name: 'empty',
+      form: {
+        state: 'empty',
         error: null,
       },
       channels: [],
