@@ -4,6 +4,7 @@ import * as yup from 'yup';
 import axios from 'axios';
 import i18next from 'i18next';
 import onChange from 'on-change';
+import { uniqueId } from 'lodash';
 
 import watcher from './view.js';
 import parsePosts from './parse-rss.js';
@@ -27,23 +28,20 @@ const fetchChannel = (urlChannel) => {
   return axios.get(proxiedUrl, { timeout: intervalFetchTimeout });
 };
 
-const updatePosts = (state) => {
-  const oldTitles = state.posts.map(({ title }) => title);
+const fetchNewPosts = (state) => {
   const updaters = state.channels
-    .map(({ urlRss }) => fetchChannel(urlRss)
+    .map(({ id, urlRss }) => fetchChannel(urlRss)
       .then((rawRss) => {
+        const oldTitles = state.posts
+          .filter(({ idChannel }) => idChannel === id)
+          .map(({ title }) => title);
         const { posts } = parsePosts(rawRss);
         const newPosts = posts.filter(({ title }) => (!oldTitles.includes(title)));
         state.posts.unshift(...newPosts);
-      })
-      .catch((error) => {
-        if (!error.isAxiosError && !error.isParseRssError) throw error;
       }));
   Promise.all(updaters)
-    .finally(() => setTimeout(updatePosts, intervalPostsUpdate, state));
+    .finally(() => setTimeout(fetchNewPosts, intervalPostsUpdate, state));
 };
-
-// Controller
 
 const validateUrl = (state, url) => {
   const channelsUrls = state.channels.map(({ urlRss }) => urlRss);
@@ -52,9 +50,6 @@ const validateUrl = (state, url) => {
     .required()
     .url('wrongURL')
     .notOneOf(channelsUrls, 'alreadyExist');
-    // .test('notExist', 'alreadyExist',
-    // (value) => !state.channels.find(({ urlRss }) => urlRss === value));
-
   try {
     schema.validateSync(url);
   } catch (err) {
@@ -72,9 +67,12 @@ const addChannel = (state, urlRss) => {
   state.loadingProcess = { state: 'fetching' };
   fetchChannel(urlRss)
     .then((rawRss) => {
-      const rssData = parsePosts(rawRss);
-      state.channels.push({ title: rssData.title, url: rssData.url, urlRss });
-      state.posts.unshift(...rssData.posts);
+      const id = uniqueId();
+      const { title, url, posts } = parsePosts(rawRss);
+      state.channels.push({
+        id, title, url, urlRss,
+      });
+      state.posts.unshift(...posts.map((post) => ({ ...post, idChannel: id })));
       state.loadingProcess = { state: 'fetched' };
       state.form = { state: 'empty' };
     })
@@ -133,7 +131,7 @@ const run = () => {
     }
   });
 
-  setTimeout(updatePosts, intervalPostsUpdate, state);
+  fetchNewPosts(state);
 };
 
 export default run;

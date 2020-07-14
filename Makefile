@@ -14,6 +14,9 @@ relink:
 build:
 	npx webpack
 
+dev:
+	NODE_ENV='development' npx webpack &
+
 lint:
 	npx eslint .
 

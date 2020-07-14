@@ -1,6 +1,8 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
+const runMode = process.env.NODE_ENV || 'production';
+
 module.exports = {
   mode: 'development',
   entry: './src/index.js',
@@ -8,6 +10,7 @@ module.exports = {
     filename: 'main.js',
     path: path.resolve(__dirname, 'dist'),
   },
+  watch: (runMode === 'development'),
   module: {
     rules: [
       {
