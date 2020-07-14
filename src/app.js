@@ -37,7 +37,7 @@ const fetchNewPosts = (state) => {
           .map(({ title }) => title);
         const { posts } = parsePosts(rawRss);
         const newPosts = posts.filter(({ title }) => (!oldTitles.includes(title)));
-        state.posts.unshift(...newPosts);
+        state.posts.unshift(...newPosts.map((post) => ({ ...post, idChannel: id })));
       }));
   Promise.all(updaters)
     .finally(() => setTimeout(fetchNewPosts, intervalPostsUpdate, state));
