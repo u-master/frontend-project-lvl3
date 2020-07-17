@@ -40,7 +40,7 @@ const loadingStateRenderers = {
     setSuccessFeedback(elements, 'loaded');
     enableControls(elements);
   },
-  'fetch-failed': (elements, error, errorData) => {
+  failed: (elements, error, errorData) => {
     setErrorFeedback(elements, error, errorData);
     enableControls(elements);
   },
@@ -61,7 +61,7 @@ const renderers = {
   },
 };
 
-export default (elements, changed, value) => {
+export default (elements) => (changed, value) => {
   const render = renderers[changed];
   render(elements, value);
 };

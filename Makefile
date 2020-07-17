@@ -15,7 +15,7 @@ build:
 	npx webpack
 
 dev:
-	NODE_ENV='development' npx webpack &
+	NODE_ENV='development' npx webpack
 
 lint:
 	npx eslint .

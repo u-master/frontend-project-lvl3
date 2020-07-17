@@ -4,9 +4,9 @@ import * as yup from 'yup';
 import axios from 'axios';
 import i18next from 'i18next';
 import onChange from 'on-change';
-import { uniqueId } from 'lodash';
+import { uniqueId, differenceBy } from 'lodash';
 
-import watcher from './view.js';
+import initWatcher from './view.js';
 import parsePosts from './parse-rss.js';
 import resources from './locales';
 
@@ -20,7 +20,6 @@ const getProxiedUrl = (url) => {
   return `${urlProxy}${url}`;
   // const urlProxy = 'https://api.allorigins.win/raw?url=';
   // return `${urlProxy}${encodeURIComponent(url)}`;
-  // return url;
 };
 
 const fetchChannel = (urlChannel) => {
@@ -32,12 +31,10 @@ const fetchNewPosts = (state) => {
   const updaters = state.channels
     .map(({ id, urlRss }) => fetchChannel(urlRss)
       .then((rawRss) => {
-        const oldTitles = state.posts
-          .filter(({ idChannel }) => idChannel === id)
-          .map(({ title }) => title);
+        const oldPosts = state.posts.filter(({ idChannel }) => idChannel === id);
         const { posts } = parsePosts(rawRss);
-        const newPosts = posts.filter(({ title }) => (!oldTitles.includes(title)));
-        state.posts.unshift(...newPosts.map((post) => ({ ...post, idChannel: id })));
+        const newPosts = differenceBy(posts, oldPosts, 'url').map((post) => ({ ...post, idChannel: id }));
+        state.posts.unshift(...newPosts);
       }));
   Promise.all(updaters)
     .finally(() => setTimeout(fetchNewPosts, intervalPostsUpdate, state));
@@ -78,11 +75,11 @@ const addChannel = (state, urlRss) => {
     })
     .catch((error) => {
       if (error.isAxiosError) {
-        state.loadingProcess = { state: 'fetch-failed', error: 'cannotFetch', errorData: { errorDetails: error.message } };
+        state.loadingProcess = { state: 'failed', error: 'cannotFetch', errorData: { errorDetails: error.message } };
         return;
       }
       if (error.isParseRssError) {
-        state.loadingProcess = { state: 'fetch-failed', error: 'cannotParse' };
+        state.loadingProcess = { state: 'failed', error: 'cannotParse' };
         return;
       }
       throw error;
@@ -106,6 +103,7 @@ const run = () => {
     resources,
   });
 
+  const watcher = initWatcher(elements);
   const state = onChange(
     {
       loadingProcess: {
@@ -119,7 +117,7 @@ const run = () => {
       channels: [],
       posts: [],
     },
-    (changed, value) => watcher(elements, changed, value),
+    watcher,
   );
 
   formAddChannel.addEventListener('submit', (e) => {
