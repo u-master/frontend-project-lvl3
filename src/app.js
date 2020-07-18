@@ -7,7 +7,7 @@ import onChange from 'on-change';
 import { uniqueId, differenceBy } from 'lodash';
 
 import initWatcher from './view.js';
-import parsePosts from './parse-rss.js';
+import parseRss from './parse-rss.js';
 import resources from './locales';
 
 
@@ -32,7 +32,7 @@ const fetchNewPosts = (state) => {
     .map(({ id, urlRss }) => fetchChannel(urlRss)
       .then((rawRss) => {
         const oldPosts = state.posts.filter(({ idChannel }) => idChannel === id);
-        const { posts } = parsePosts(rawRss);
+        const { posts } = parseRss(rawRss);
         const newPosts = differenceBy(posts, oldPosts, 'url').map((post) => ({ ...post, idChannel: id }));
         state.posts.unshift(...newPosts);
       }));
@@ -65,7 +65,7 @@ const addChannel = (state, urlRss) => {
   fetchChannel(urlRss)
     .then((rawRss) => {
       const id = uniqueId();
-      const { title, url, posts } = parsePosts(rawRss);
+      const { title, url, posts } = parseRss(rawRss);
       state.channels.push({
         id, title, url, urlRss,
       });
